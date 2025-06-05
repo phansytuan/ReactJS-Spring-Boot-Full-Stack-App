@@ -1,8 +1,8 @@
 package com.tuancode.ems.service;
 
-import com.tuancode.ems.controller.auth.AuthenticationRequest;
-import com.tuancode.ems.controller.auth.AuthenticationResponse;
-import com.tuancode.ems.controller.auth.RegisterRequest;
+import com.tuancode.ems.dto.auth.AuthenticationRequestDto;
+import com.tuancode.ems.dto.auth.AuthenticationResponseDto;
+import com.tuancode.ems.dto.auth.RegisterRequestDto;
 import com.tuancode.ems.entities.Role;
 import com.tuancode.ems.entities.User;
 import com.tuancode.ems.repositories.UserRepository;
@@ -16,27 +16,28 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
+
   // === call Beans ===
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
 
-  public AuthenticationResponse register(RegisterRequest registerRequest) {
+  public AuthenticationResponseDto register(RegisterRequestDto registerRequestDto) {
     var user = User.builder()
-        .name(registerRequest.getName())
-        .email(registerRequest.getEmail())
-        .password(passwordEncoder.encode(registerRequest.getPassword()))
+        .name(registerRequestDto.getName())
+        .email(registerRequestDto.getEmail())
+        .password(passwordEncoder.encode(registerRequestDto.getPassword()))
         .role(Role.USER)
         .build();
     userRepository.save(user);
     var jwtToken = jwtService.generateToken(user);
-    return AuthenticationResponse.builder()
+    return AuthenticationResponseDto.builder()
         .token(jwtToken)
         .build();
   }
 
-  public AuthenticationResponse authenticate(AuthenticationRequest authenRequest) {
+  public AuthenticationResponseDto authenticate(AuthenticationRequestDto authenRequest) {
     authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
             authenRequest.getEmail(),
@@ -46,7 +47,7 @@ public class AuthenticationService {
     var user = userRepository.findByEmail(authenRequest.getEmail())
         .orElseThrow();
     var jwtToken = jwtService.generateToken(user);
-    return AuthenticationResponse.builder()
+    return AuthenticationResponseDto.builder()
         .token(jwtToken)
         .build();
   }

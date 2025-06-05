@@ -85,8 +85,8 @@ The filter stops the request and responds with:
 
 ---
 
-### 🔹 11. PostgreSQL + Docker
-- Any DB-related logic (e.g., retrieving user info) hits the **PostgreSQL database**.
+### 🔹 11. MySQL + Docker
+- Any DB-related logic (e.g., retrieving user info) hits the **MySQL database**.
 - Database runs inside a **Docker container**.
 
 ---

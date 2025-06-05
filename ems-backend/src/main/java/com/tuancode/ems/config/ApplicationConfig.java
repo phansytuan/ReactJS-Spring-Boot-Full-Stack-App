@@ -13,44 +13,53 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@Configuration
-@RequiredArgsConstructor
+@Configuration // Marks this class as a Spring configuration class
+@RequiredArgsConstructor // Automatically generates a constructor for required final fields
 public class ApplicationConfig {
 
-  // get the user from the db
+  // Inject the UserRepository to load user details from the database
   private final UserRepository userRepository;
 
+  /**
+   * 🔹 Bean for UserDetailsService — used by Spring Security to load user-specific data
+   *   @return UserDetailsService lambda that finds a user by email (username)
+   */
   @Bean
   public UserDetailsService userDetailsService() {
-    return username -> userRepository.findByEmail(username) // return an Optional of user
-        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    return username -> userRepository.findByEmail(username) // Searches by email (used as username)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found")); // Throws if user doesn't exist
   }
 
+  /**
+   * 🔐 Bean for AuthenticationProvider — bridges Spring Security with our userDetailsService & passwordEncoder
+   *   @return Configured DaoAuthenticationProvider
+   */
   @Bean
   public AuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-    authProvider.setUserDetailsService(userDetailsService());
-    authProvider.setPasswordEncoder(passwordEncoder());
+    authProvider.setUserDetailsService(userDetailsService()); // Set custom user detail service
+    authProvider.setPasswordEncoder(passwordEncoder()); // Set password encoder (BCrypt)
     return authProvider;
   }
 
+  /**
+   * 🔐 Bean for AuthenticationManager — handles authentication logic (used in AuthService)
+   *   @param authConfig Automatically injected AuthenticationConfiguration
+   *   @return AuthenticationManager
+   *   @throws Exception if authentication manager can't be built
+   */
   @Bean
   public AuthenticationManager authenticationManager(
       AuthenticationConfiguration authConfig) throws Exception {
-    return authConfig.getAuthenticationManager();
+    return authConfig.getAuthenticationManager(); // Delegates creation to Spring
   }
 
+  /**
+   * 🔑 Bean for PasswordEncoder — encrypts passwords (used to hash and verify)
+   *   @return BCrypt password encoder instance
+   */
   @Bean
   public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
+    return new BCryptPasswordEncoder(); // BCrypt is widely used, strong hashing algorithm
   }
 }
-
-/* public class ApplicationConfig {
-    return new UserDetailsService() {
-      @Override
-      public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return null;
-      }
-    } (before replace with Lambda) input parameter -> implementation
-*/

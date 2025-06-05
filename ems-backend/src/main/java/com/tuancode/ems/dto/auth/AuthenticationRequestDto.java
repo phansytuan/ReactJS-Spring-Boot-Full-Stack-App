@@ -1,4 +1,4 @@
-package com.tuancode.ems.controller.auth;
+package com.tuancode.ems.dto.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
+public class AuthenticationRequestDto {
 
-  private String name;
   private String email;
   private String password;
 }

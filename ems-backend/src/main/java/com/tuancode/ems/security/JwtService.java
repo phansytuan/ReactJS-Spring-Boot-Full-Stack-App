@@ -13,69 +13,120 @@ import java.util.function.Function;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-/* 🔹 3. Validate JWT Token  */
-@Service // to transform it to a managed Beans
+/* 🔹 3. Validate JWT Token */
+@Service // Marks this class as a Spring-managed service bean
 public class JwtService {
+
+  // 🔐 Secret key used to sign and verify JWTs (should be securely stored)
   private static final String SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
 
+  /**
+   * Extracts the username (subject) from a given JWT.
+   * @param token JWT string
+   * @return Username embedded in the token
+   */
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
   }
 
+  /**
+   * Generic method to extract any claim from the token using a resolver function.
+   * @param token JWT string
+   * @param claimsResolver Function to extract a specific claim
+   * @return The resolved claim value
+   */
   public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
     final Claims claims = extractAllClaims(token);
     return claimsResolver.apply(claims);
   }
 
-  // generateToken from userDetails
+  /**
+   * Generates a new JWT using only the user details.
+   * @param userDetails Spring Security's UserDetails
+   * @return Signed JWT string
+   */
   public String generateToken(UserDetails userDetails) {
     return generateToken(new HashMap<>(), userDetails);
   }
 
-  // generateToken from extractClaims
-  public String generateToken( // type String because a token is a String
+  /**
+   * Generates a JWT with additional claims.
+   * @param extractClaims Custom claims to include in token
+   * @param userDetails User details used for subject and authorities
+   * @return Signed JWT string
+   */
+  public String generateToken(
       Map<String, Object> extractClaims,
       UserDetails userDetails)
   {
     return Jwts
         .builder()
-        .setClaims(extractClaims)
-        .setSubject(userDetails.getUsername())
-        .setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
-        .signWith(getSignInKey(), SignatureAlgorithm.HS256)
-        .compact();
+        .setClaims(extractClaims) // Add custom claims if needed
+        .setSubject(userDetails.getUsername()) // Set subject as username
+        .setIssuedAt(new Date(System.currentTimeMillis())) // Issue time
+        .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // Token valid for 24 hours
+        .signWith(getSignInKey(), SignatureAlgorithm.HS256) // Sign using HMAC SHA-256
+        .compact(); // Generate compact JWT string
   }
 
-  public boolean isTokenValid(String token, UserDetails userDetails) { // make sure that Username we have within the token is the same as the username we have as input
+  /**
+   * Checks if the token is valid for the given user.
+   * @param token JWT string
+   * @param userDetails User to compare against token subject
+   * @return true if valid and not expired
+   */
+  public boolean isTokenValid(String token, UserDetails userDetails) {
     final String username = extractUsername(token);
     return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
   }
 
+  /**
+   * Checks if the token is expired.
+   * @param token JWT string
+   * @return true if token is expired
+   */
   private boolean isTokenExpired(String token) {
     return extractExpiration(token).before(new Date());
   }
 
+  /**
+   * Extracts the expiration date from the token.
+   * @param token JWT string
+   * @return Date of expiration
+   */
   private Date extractExpiration(String token) {
     return extractClaim(token, Claims::getExpiration);
   }
 
+  /**
+   * Parses and retrieves all claims from the JWT.
+   * @param token JWT string
+   * @return Claims object containing all token data
+   */
   private Claims extractAllClaims(String token) {
     return Jwts
         .parserBuilder()
-        .setSigningKey(getSignInKey()) // digitally sign the jwt
+        .setSigningKey(getSignInKey()) // Use signing key to validate JWT signature
         .build()
         .parseClaimsJws(token)
-        .getBody();
+        .getBody(); // Get the payload (claims)
   }
 
+  /**
+   * Decodes the base64 secret key and generates a signing key.
+   * @return HMAC-SHA-256 key for signing/validating JWTs
+   */
   private Key getSignInKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-    return Keys.hmacShaKeyFor(keyBytes);
+    byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY); // Decode base64 secret
+    return Keys.hmacShaKeyFor(keyBytes); // Generate HMAC-SHA key
   }
 }
-/* SignInKey() is a secret that is used to digitally sign the jwt,
-*  is used to create the signature part of the JWT.
-*  Which is used to verify that the sender (the client) of the JWT
-*   is who it claims to be
-*  & ensure that the message wasn't changed along the way */
+
+/*
+📌 Notes:
+- The getSignInKey() method returns a cryptographic key used to sign and verify the JWT.
+- The JWT is composed of three parts: Header, Payload (Claims), and Signature.
+- The signature ensures:
+    🔐 The token was created by a trusted source (server).
+    🔒 The token has not been tampered with.
+*/

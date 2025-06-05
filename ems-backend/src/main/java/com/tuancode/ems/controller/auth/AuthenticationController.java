@@ -1,5 +1,8 @@
 package com.tuancode.ems.controller.auth;
 
+import com.tuancode.ems.dto.auth.AuthenticationRequestDto;
+import com.tuancode.ems.dto.auth.AuthenticationResponseDto;
+import com.tuancode.ems.dto.auth.RegisterRequestDto;
 import com.tuancode.ems.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,14 +19,14 @@ public class AuthenticationController {
   private final AuthenticationService authenService;
 
   @PostMapping("/register")
-  public ResponseEntity<AuthenticationResponse> register(
-      @RequestBody RegisterRequest registerRequest) {
-    return ResponseEntity.ok(authenService.register(registerRequest));
+  public ResponseEntity<AuthenticationResponseDto> register(
+      @RequestBody RegisterRequestDto registerRequestDto) {
+    return ResponseEntity.ok(authenService.register(registerRequestDto));
   }
 
   @PostMapping("/authenticate")
-  public ResponseEntity<AuthenticationResponse> register(
-      @RequestBody AuthenticationRequest authenRequest) {
+  public ResponseEntity<AuthenticationResponseDto> register(
+      @RequestBody AuthenticationRequestDto authenRequest) {
     return ResponseEntity.ok(authenService.authenticate(authenRequest));
   }
 }
